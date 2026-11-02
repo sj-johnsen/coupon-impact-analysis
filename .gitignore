@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+appendix.html
+*.tex
+# course data: not published, add your own copy to reproduce
+assignment_data_panel_obs.csv

@@ -1,0 +1,85 @@
+---
+kurs: topics-in-econometrics-b
+assignment: "01"
+typ: assignment
+titel: Causal Impact of Coupon Interventions
+untertitel: Evidence for the Executive and the Data Analysis Section Manager
+name: Simon Jensen
+matrikel: 2226237U
+dozent: Masayuki Sawada
+datum: 2026-10-15
+---
+
+## Executive Summary
+
+Should the company keep sending these coupons? Not in their current form. Neither coupon is shown to pay for itself. The 3000 yen coupon lifts spending by {{ did.main.estimate | int }} yen per customer (95% CI {{ did.main.ci_lo | int }} to {{ did.main.ci_hi | int }}), about its face value or more, yet covering its cost still takes a margin of {{ costbenefit.coupon_3000.did_levels.by_redemption.100.break_even_margin | pct0 }} to {{ costbenefit.coupon_3000.did_proportional.by_redemption.100.break_even_margin | pct0 }}. The 500 yen coupon works only just above 1,000 yen, and even there its size depends on the specification.
+
+The preliminary report puts the 3000 yen group {{ did.card_krueger.gap_post | int }} yen above the comparison group in week 34, and that figure is the problem: {{ descriptives.naive.share_selection_3000 | pct0 }} of the gap existed before the announcement, because customers are grouped by week-33 spending. At face value it credits the coupon with {{ costbenefit.naive_view.incremental_revenue | mil1 }} million yen of extra spending; the design-based figure is {{ costbenefit.coupon_3000.did_levels.incremental_revenue | mil1 }} million, against {{ costbenefit.naive_view.cost_full_redemption | mil1 }} million of coupon cost. A second trap: the group below 1,000 yen sees its mean fall to {{ descriptives.mean_reversion.w33 | int }} yen in week 33 and recover to {{ descriptives.mean_reversion.w34 | int }} by itself.
+
+What does the design say instead? Customers just above 1,000 yen spent {{ rd.at1000.effects.d34_pre.effect | int }} yen more in week 34 than those just below, against their own weeks 30 to 32 (CI {{ rd.at1000.effects.d34_pre.ci_lo | int }} to {{ rd.at1000.effects.d34_pre.ci_hi | int }}); in levels the gap is {{ rd.at1000.effects.s34.effect | signed }} yen (CI {{ rd.at1000.effects.s34.ci_lo | int }} to {{ rd.at1000.effects.s34.ci_hi | int }}). We rely on the first, because the upper side already spent {{ rd.at1000.placebo_pre_effect_range.0 | int }} to {{ rd.at1000.placebo_pre_effect_range.1 | int }} yen more per week before any coupon; it is not significant (p = {{ rd.at1000.placebo_pre_p_range.0 | p }} to {{ rd.at1000.placebo_pre_p_range.1 | p }}), yet the level estimate counts it as coupon effect. Near 3,000 yen it is {{ rd.at3000.effects.s34.effect | signed }} yen (CI {{ rd.at3000.effects.s34.ci_lo | int }} to {{ rd.at3000.effects.s34.ci_hi | int }}), not different from zero.
+
+**Recommendation.** At full redemption the 3000 yen coupon needs a margin of {{ costbenefit.coupon_3000.did_levels.by_redemption.100.break_even_margin | pct0 }} to {{ costbenefit.coupon_3000.did_proportional.by_redemption.100.break_even_margin | pct0 }} and the 500 yen coupon {{ costbenefit.coupon_500.at_lower_edge.by_redemption.100.break_even_margin | pct0 }} to {{ costbenefit.coupon_500.at_lower_edge_diff.by_redemption.100.break_even_margin | pct0 }} even if its effect held for every eligible customer. The ranges overlap, so the margin alone does not decide between them. We suggest (1) stopping the 3000 yen coupon as announced, which costs {{ costbenefit.coupon_3000.did_levels.cost_full_redemption | mil1 }} million yen and bends behaviour, and (2) continuing the 500 yen coupon only as a controlled test with a randomised holdout that measures redemption and margin. At the lower end of its level interval it would need a margin of {{ costbenefit.coupon_500.at_lower_edge_ci_low.by_redemption.100.break_even_margin | pct0 }}, yet it costs only {{ costbenefit.coupon_500.at_lower_edge.cost_full_redemption | mil2 }} million yen, so a test is cheap.
+
+## Evidences
+
+The 500 yen coupon is the cleaner experiment. It was sent without notice, so customers just below and above 1,000 yen differ only in the offer. That is a regression discontinuity (RD) design on week-33 spending. The data show the offer, not redemption, so RD estimates are intention-to-treat (ITT) effects. Let $X_i$ be spending in week 33, $Y_i$ spending in week 34, $c$ the cutoff and $D_i = \mathbf{1}\{X_i \ge c\}$ the offer. The estimand is
+
+$$\tau_{\mathrm{RD}} = \lim_{x \downarrow c} \mathbb{E}[Y_i \mid X_i = x] - \lim_{x \uparrow c} \mathbb{E}[Y_i \mid X_i = x].$$
+
+It is the ITT effect at the cutoff if $\mathbb{E}[Y_i(d) \mid X_i = x]$ is continuous in $x$ at $c$ for $d = 0, 1$. It is estimated by local linear regression with a triangular kernel $K$ and the MSE-optimal bandwidth $h$ ({{ rd.at1000.effects.s34.h | int }} yen for the level and {{ rd.at1000.effects.d34_pre.h | int }} for the change, at 1,000),
+
+$$\min_{a,\,\tau,\,b_0,\,b_1} \sum_{i:\,|X_i - c| \le h} K\!\left(\tfrac{X_i - c}{h}\right) \bigl(Y_i - a - \tau D_i - b_0 (X_i - c) - b_1 D_i (X_i - c)\bigr)^2,$$
+
+with bias-corrected point estimates and robust confidence intervals (Calonico et al., 2014). We use two outcomes: the level $Y_i$ and the change $\Delta Y_i = Y_i - \bar{Y}_i^{\,30\text{-}32}$ against each customer's own weeks 30 to 32.
+
+In panel A, spending steps up by {{ rd.at1000.effects.s34.effect | int }} yen where the coupon starts. Was that step already there? Panel B shows the same customers' spending in weeks 30 to 32, before any coupon, and the right side is already {{ rd.at1000.placebo.pre.effect | int }} yen higher. Against each customer's own weeks 30 to 32 the jump is {{ rd.at1000.effects.d34_pre.effect | int }} yen, the figure we rely on. At 3,000 yen the same design, with the coupon now below the cutoff, finds nothing ({{ aref:rd3000 }}).
+
+{{ fig:report_rd | Regression discontinuity at 1,000 yen (dots: bin means, lines: local linear fits). (A) Week-34 spending, jump [[ rd.at1000.effects.s34.effect | signed ]] yen. (B) Same customers, weeks 30 to 32, jump [[ rd.at1000.placebo.pre.effect | signed ]] yen (CI [[ rd.at1000.placebo.pre.ci_lo | int ]] to [[ rd.at1000.placebo.pre.ci_hi | int ]]). }}
+
+The 3000 yen coupon was announced at the start of week 33, so customers could steer toward 10,000 yen and continuity fails there (Diagnostics). A different design fits: we compare the {{ costbenefit.coupon_3000.did_levels.n_eligible | int }} customers with 10,000 yen or more in week 33 (G = 1) with the 3,000-9,999 group (G = 0), before and after the announcement (T = 0, 1), using weeks 30 to 32 as baseline (Sawada, 2026, Lecture 5). Unlike in the slides, our groups are defined by week-33 spending, measured after the announcement. The difference-in-differences (DiD) coefficient α is therefore the ATT of being eligible: an effect of the offer, including on customers the announcement pushed over the line. With $Y_{it}$ the spending of customer $i$ in period $t$,
+
+$$Y_{it} = \beta_0 + \beta_1 T_t + \beta_2 G_i + \alpha D_{it} + \varepsilon_{it}, \quad D_{it} = G_i T_t, \quad \alpha = (\bar{Y}_{1,1} - \bar{Y}_{1,0}) - (\bar{Y}_{0,1} - \bar{Y}_{0,0}),$$
+
+where $\bar{Y}_{g,t}$ is the mean of group $g$ in period $t$ and standard errors are clustered by customer. Parallel trends means $\mathbb{E}[Y_{i1}(0) - Y_{i0}(0) \mid G_i = 1] = \mathbb{E}[Y_{i1}(0) - Y_{i0}(0) \mid G_i = 0]$: without the coupon, both groups would have changed by the same amount.
+
+{{ fig:report_did | The 3000 yen coupon. (A) Mean spending by group; the band is the announcement week. (B) Gap to the 3,000-9,999 group relative to week 32; hollow marker: groups are set by spending in that week. The main estimate ([[ did.main.estimate | signed ]] yen) uses weeks 30 to 32 as baseline. }}
+
+In A the coupon group led in every earlier week, so the raw gap misleads. In B the gap barely moves in weeks 30 and 31 ({{ did.event_study.coefficients.30.estimate | signed }} and {{ did.event_study.coefficients.31.estimate | signed }} yen) and jumps to {{ did.event_study.coefficients.34.estimate | signed }} in week 34. The four group means behind it ({{ aref:did_means }}) form the two-by-two comparison of Card and Krueger (1994). The coupon group gained {{ did.card_krueger.change_treated | int }} yen, the comparison group {{ did.card_krueger.change_control | int }}. Looking only at the coupon group's change would credit the coupon with a time effect, and comparing the groups after the announcement would carry over the {{ did.card_krueger.gap_pre | int }} yen gap that existed before, the selection term. The difference of the two changes removes both: $\alpha = {{ did.card_krueger.change_treated | int }} - {{ did.card_krueger.change_control | int }} = {{ did.card_krueger.did | int }}$ yen.
+
+The announcement also moved behaviour. Against the mean of weeks 31 and 32, about {{ bunching.week33.missing_mass | int }} customers who would have spent below 10,000 yen spent about {{ bunching.week33.stretch | int }} yen more and landed just above the line, worth {{ bunching.week33.effect_total | mil2 }} million yen in week 33.
+
+Spending is not profit. A coupon of face value $f$ sent to $N$ customers, a share $r$ of whom redeem it, pays for itself only if $m\,\Delta R \ge r N f$ ($\Delta R$: extra spending, $m$: margin on it). The break-even margin is
+
+$$m^{*} = \frac{r\,N f}{\Delta R}.$$
+
+For the 3000 yen coupon at $r = 1$, $Nf = {{ costbenefit.coupon_3000.did_levels.n_eligible | int }} \times 3{,}000 = {{ costbenefit.coupon_3000.did_levels.cost_full_redemption | mil1 }}$ million yen and $\Delta R = {{ costbenefit.coupon_3000.did_levels.incremental_revenue | mil1 }}$ million (incl. the announcement effect), so $m^{*} = {{ costbenefit.coupon_3000.did_levels.by_redemption.100.break_even_margin | pct0 }}$. {{ ref:summary }} lists $m^{*}$; at 50% redemption it halves.
+
+{{ tab:summary | Estimated coupon effects and the margin needed to break even at full redemption (the 3000 yen margins include the 0.66 million yen announcement effect). }}
+
+## Diagnostics
+
+At 1,000 yen the density test (Cattaneo et al., 2020) gives p = {{ rd.at1000.density_w33.p | p }}: no sign of manipulation. Of {{ rd.at1000.multiple_testing.n_tests | int }} balance and placebo tests, {{ rd.at1000.multiple_testing.n_reject_holm | int }} reject after Holm's (1979) correction, which multiplies the $k$-th smallest of $m$ p-values by $m - k + 1$, keeps the order and caps at 1. {{ ref:diagnostics }} summarises all designs. The change from baseline is the less stable estimate: across {{ rd.at1000.robustness.summary.d34_pre.n_specs | int }} bandwidth, kernel and polynomial choices ({{ aref:robustness }}) it runs from {{ rd.at1000.robustness.summary.d34_pre.min_effect | signed }} to {{ rd.at1000.robustness.summary.d34_pre.max_effect | signed }} yen, and its interval includes zero in {{ rd.at1000.robustness.summary.d34_pre.n_ci_includes_zero | int }}. The level estimate never includes zero ({{ rd.at1000.robustness.summary.s34.min_effect | signed }} to {{ rd.at1000.robustness.summary.s34.max_effect | signed }} yen). At 3,000 yen the week-33 density test is borderline (p = {{ rd.at3000.density_w33.p | p }}; week 32: p = {{ rd.at3000.density_w32.p | p }}), and {{ rd.at3000.multiple_testing.n_reject_5pct | int }} of {{ rd.at3000.multiple_testing.n_tests | int }} balance and placebo tests reject at 5%, none after Holm's correction.
+
+Continuity fails at 10,000 yen. Customers just above spent {{ rd.at10000.placebo.pre.effect | abs }} yen less per week at baseline, which no coupon explains; the density test rejects too (p {{ rd.at10000.density_w33.p | p }}), though alone it would not decide the case (Sawada, 2026, Lecture 4). The naive estimate ({{ rd.at10000.effects.s34.effect | signed }} yen) is no coupon effect ({{ aref:rd10000 }}).
+
+Parallel trends cannot be tested after treatment, so we test around it. In the event-study version,
+
+$$Y_{it} = \lambda_i + \mu_t + \sum\nolimits_{k \ne 32} \gamma_k\, G_i\, \mathbf{1}\{t = k\} + \varepsilon_{it},$$
+
+the pre-period coefficients $\gamma_{30}$ and $\gamma_{31}$ should be zero. The joint pre-trend test rejects (p {{ did.event_study.pretrend_joint_p | p }}): the gap was not constant before. The deviation is small ({{ did.event_study.coefficients.30.estimate | signed }} yen in week 30, {{ did.pretrend_w30_share_of_gap | pct1 }} of the gap), and extending the trend gives {{ did.trend_adjusted.estimate | int }} instead of {{ did.main.estimate | int }} yen. The same design one step back in time, with no coupon, gives {{ did.placebo.estimate | signed }} yen: not zero but only {{ did.placebo_share_of_main | pct1 }} of the main effect. If effects scale with baseline spending, that is, if growth $Y_{i1} / \bar{Y}_{i0} - 1$ is compared instead of the difference, the estimate is {{ did.proportional.att_yen | int }} yen.
+
+{{ tab:diagnostics | Validity checks by design. }}
+
+Two limits remain. Each RD estimate holds at its cutoff only, and the data show eligibility, not redemption. Purchases may have been pulled forward into week 33 and the announcement may have nudged the comparison group; we cannot measure either.
+
+## References
+
+Calonico, S., Cattaneo, M. D., & Titiunik, R. (2014). Robust nonparametric confidence intervals for regression-discontinuity designs. *Econometrica, 82*(6), 2295-2326. https://doi.org/10.3982/ECTA11757
+
+Card, D., & Krueger, A. B. (1994). Minimum wages and employment: A case study of the fast-food industry in New Jersey and Pennsylvania. *American Economic Review, 84*(4), 772-793.
+
+Cattaneo, M. D., Jansson, M., & Ma, X. (2020). Simple local polynomial density estimators. *Journal of the American Statistical Association, 115*(531), 1449-1455. https://doi.org/10.1080/01621459.2019.1635480
+
+Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of Statistics, 6*(2), 65-70.
+
+Sawada, M. (2026). *Topics in Econometrics B: Lectures 4 and 5* [Lecture slides]. Hitotsubashi University.
